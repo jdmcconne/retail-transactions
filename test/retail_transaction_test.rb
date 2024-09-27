@@ -90,6 +90,10 @@ describe RetailTransaction do
       assert_invalid_transition { tx.process_payment! }
     end
 
+    it "cannot be refunded" do
+      assert_invalid_transition { tx.refund! }
+    end
+
     it "can handle payment accepted" do
       tx.payment_authorized!
       assert_equal false, tx.processing_payment?
@@ -118,6 +122,10 @@ describe RetailTransaction do
       assert_raises do
         tx.add_item("half a slice of bologna")
       end
+    end
+
+    it "cannot be refunded" do
+      assert_invalid_transition { tx.refund! }
     end
 
     it "can reopen and add more items" do
@@ -152,5 +160,30 @@ describe RetailTransaction do
     it "cannot be reopened" do
       assert_invalid_transition { tx.reopen! }
     end
+
+    it "can be refunded" do
+      tx.refund!
+      assert_equal true,  tx.refunded?
+    end
   end
+
+  describe "that is refunded" do
+    before(:each) do
+      tx.add_item("potato")
+      tx.check_out!
+      tx.payment_info = "sea shells"
+      tx.process_payment!
+      tx.payment_authorized!
+      tx.refund!
+    end
+
+    it "cannot be reopened" do
+      assert_invalid_transition { tx.reopen! }
+    end
+
+    it "cannot be refunded a second time" do
+      assert_invalid_transition { tx.refund! }
+    end
+  end
+
 end
